@@ -342,9 +342,9 @@ void MainWindow::setupViews()
 
 void MainWindow::set_model_faces()
 {
-    double anger_all = (neutral_all / QRandomGenerator::global()->bounded(5,9));
-    double sad_all = (neutral_all / QRandomGenerator::global()->bounded(5,9));
-    double disgust_all = (neutral_all / QRandomGenerator::global()->bounded(5,9));
+    double anger_all = (neutral_all / QRandomGenerator::global()->bounded(7,11));
+    double sad_all = (neutral_all / QRandomGenerator::global()->bounded(7,11));
+    double disgust_all = (neutral_all / QRandomGenerator::global()->bounded(7,11));
     double sum = anger_all + sad_all + disgust_all + smile_all + neutral_all;
 
     int smile_perc = (smile_all * 100)/(sum);
