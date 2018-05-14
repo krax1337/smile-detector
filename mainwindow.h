@@ -11,6 +11,7 @@
 #include <QDebug>
 #include <QSettings>
 #include <vector>
+#include <QRandomGenerator>
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
 
@@ -93,7 +94,7 @@ private:
     QVector<int> smiles;
 
     long long smile_all = 0;
-    long long other_all = 0;
+    long long neutral_all = 0;
 
     QTimer* tmrTimer;
     QTimer* tmrTimer3;

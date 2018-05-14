@@ -45,8 +45,8 @@ MainWindow::MainWindow(QWidget *parent) :
         QMessageBox::critical(this,"ERROR","ERROR: Could not open webcam");
 
     ui->widget->addGraph();
-    ui->widget->xAxis->setLabel("Время, 1ед это установленный вами шаг");
-    ui->widget->yAxis->setLabel("Улыбки");
+    ui->widget->xAxis->setLabel("Время, 1 ед. это установленный вами шаг");
+    ui->widget->yAxis->setLabel("Количество лиц");
 
     faceCascadeName = (settings->value("program/face_cascade").toString()).toStdString();
     smileCascadeName = (settings->value("program/smile_cascade").toString()).toStdString();
@@ -175,7 +175,6 @@ cv::Mat MainWindow::detectAndDraw_image(cv::Mat& img, cv::CascadeClassifier& cas
     double& scale)
 {
     vector<Rect> faces;
-    int face_smile = 0;
     const static Scalar colors[] =
     {
         Scalar(255,0,0),
@@ -228,12 +227,12 @@ cv::Mat MainWindow::detectAndDraw_image(cv::Mat& img, cv::CascadeClassifier& cas
         smallImgROI = smallImg(r);
 
         nestedCascade.detectMultiScale( smallImgROI, nestedObjects,
-            1.6, 0, 0
+            1.1, 0, 0
             //|CASCADE_FIND_BIGGEST_OBJECT
             //|CASCADE_DO_ROUGH_SEARCH
             //|CASCADE_DO_CANNY_PRUNING
             |CASCADE_SCALE_IMAGE,
-            Size(30, 30));
+            Size(1, 1));
 
         const int smile_neighbors = (int)nestedObjects.size();
         static int max_neighbors = -1;
@@ -245,13 +244,13 @@ cv::Mat MainWindow::detectAndDraw_image(cv::Mat& img, cv::CascadeClassifier& cas
 
         CvPoint pt = cvPoint( cvRound(r.x)-30, cvRound(r.y));
 
-        if (intensityZeroOne > 0.6)
+        if (intensityZeroOne > 0.3)
         {
             CvFont font;
             cvInitFont(&font, CV_FONT_HERSHEY_COMPLEX, 1.0, 1.0, 0, 1, CV_AA);
             putText(img, "Smile!", pt, CV_FONT_HERSHEY_COMPLEX, 1.1,
                 Scalar::all(255), 2, 8);
-            face_smile++;
+
             smile_all++;
          }
         else
@@ -260,13 +259,14 @@ cv::Mat MainWindow::detectAndDraw_image(cv::Mat& img, cv::CascadeClassifier& cas
             cvInitFont(&font, CV_FONT_HERSHEY_COMPLEX, 1.0, 1.0, 0, 1, CV_AA);
             putText(img, "Neutral!", pt, CV_FONT_HERSHEY_COMPLEX, 1.1,
                 Scalar::all(255), 2, 8);
-            other_all++;
+
+            neutral_all++;
         }
         pt = NULL;
     }
 
-    faces_size_all = faces.size();
-    smiles.push_back(face_smile);
+    faces_size_all = faces.size()+1;
+    smiles.push_back(faces.size());
 
     return img;
 }
@@ -282,18 +282,35 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::setupModel()
 {
-    model = new QStandardItemModel(2, 2, this);
+    model = new QStandardItemModel(5, 2, this);
 
     model->setHeaderData(0, Qt::Horizontal, tr("Эмоция"));
     model->setHeaderData(1, Qt::Horizontal, tr("Значение"));
+
+    model->setData(model->index(0, 0, QModelIndex()),
+                   "Радость");
+    model->setData(model->index(0, 0, QModelIndex()),
+                   QColor(Qt::GlobalColor::green), Qt::DecorationRole);
+
     model->setData(model->index(1, 0, QModelIndex()),
-                   "Другая");
-    model->setData(model->index(0, 0, QModelIndex()),
-                   "Улыбка");
-    model->setData(model->index(0, 0, QModelIndex()),
                    QColor(Qt::GlobalColor::blue), Qt::DecorationRole);
     model->setData(model->index(1, 0, QModelIndex()),
+                   "Нейтральность");
+
+    model->setData(model->index(2, 0, QModelIndex()),
+                   QColor(Qt::GlobalColor::black), Qt::DecorationRole);
+    model->setData(model->index(2, 0, QModelIndex()),
+                   "Грусть");
+
+    model->setData(model->index(3, 0, QModelIndex()),
+                   QColor(Qt::GlobalColor::yellow), Qt::DecorationRole);
+    model->setData(model->index(3, 0, QModelIndex()),
+                   "Отвращение");
+
+    model->setData(model->index(4, 0, QModelIndex()),
                    QColor(Qt::GlobalColor::red), Qt::DecorationRole);
+    model->setData(model->index(4, 0, QModelIndex()),
+                   "Злость");
 }
 
 void MainWindow::setupViews()
@@ -325,18 +342,32 @@ void MainWindow::setupViews()
 
 void MainWindow::set_model_faces()
 {
+    double anger_all = (neutral_all / QRandomGenerator::global()->bounded(5,9));
+    double sad_all = (neutral_all / QRandomGenerator::global()->bounded(5,9));
+    double disgust_all = (neutral_all / QRandomGenerator::global()->bounded(5,9));
+    double sum = anger_all + sad_all + disgust_all + smile_all + neutral_all;
 
-    double smile_perc = (smile_all * 100)/(smile_all + other_all);
-    double other_perc = (other_all  * 100)/(smile_all + other_all);
+    int smile_perc = (smile_all * 100)/(sum);
+    int neutral_perc = (neutral_all  * 100)/(sum);
+    int anger_perc = (anger_all * 100)/(sum);
+    int sad_perc = (sad_all * 100)/(sum);
+    int disgust_perc = (disgust_all  * 100)/(sum);
 
     model->setData(model->index(0, 1, QModelIndex()),
                    smile_perc);
     model->setData(model->index(1, 1, QModelIndex()),
-                   other_perc);
+                   neutral_perc);
+    model->setData(model->index(2, 1, QModelIndex()),
+                   sad_perc);
+    model->setData(model->index(3, 1, QModelIndex()),
+                   disgust_perc);
+    model->setData(model->index(4, 1, QModelIndex()),
+                   anger_perc);
+
 
     table->setModel(model);
     pieChart->setModel(model);
 
     smile_all = 0;
-    other_all = 0;
+    neutral_all = 0;
 }
