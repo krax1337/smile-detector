@@ -68,8 +68,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(tmrTimer,SIGNAL(timeout()),this,SLOT(onlyCam()));
     connect(tmrTimer2,SIGNAL(timeout()),this,SLOT(proccesFrameUpdGui()));
     connect(tmrTimer3,SIGNAL(timeout()),this,SLOT(set_model_faces()));
-
-
 }
 
 MainWindow::~MainWindow()
@@ -122,7 +120,6 @@ void MainWindow::proccesFrameUpdGui()
     if(faces_size_all >= faces_size_all_max)
         faces_size_all_max = faces_size_all;
 
-
     QVector<double> x(b), y(b);
 
     for(int i = 0; i < time_line; i++)
@@ -130,6 +127,7 @@ void MainWindow::proccesFrameUpdGui()
         x[i] = i;
         y[i] = smiles[i];
     }
+    
     time_line++;
 
     ui->widget->graph(0)->setData(x, y);
@@ -137,6 +135,7 @@ void MainWindow::proccesFrameUpdGui()
     ui->widget->yAxis->setRange(-1, faces_size_all_max);//Для оси Oy
     ui->widget->replot();
 }
+
 
 void MainWindow::on_Start_clicked()
 {
@@ -165,9 +164,6 @@ void MainWindow::on_Start_clicked()
         ui->Start->setText("Пауза");
     }
 }
-
-
-
 
 
 cv::Mat MainWindow::detectAndDraw_image(cv::Mat& img, cv::CascadeClassifier& cascade,
